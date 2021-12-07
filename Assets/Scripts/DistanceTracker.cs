@@ -3,9 +3,11 @@ using System.IO;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class DistanceTracker : MonoBehaviour
 {
+    [SerializeField] string personName;
     [SerializeField] GameObject infinadeck;
     [SerializeField] GameObject startDirection;
 
@@ -18,28 +20,18 @@ public class DistanceTracker : MonoBehaviour
     float xDistance;
     float yDistance;
 
-    float totalDisplacement;
-    float totalDistance;
-
     bool isMovement;
 
     float pointTimer;
     float startTimer;
-    float runTimer;
+    [SerializeField] float runTimer;
 
     GameObject startSphere;
     Vector3 cameraForward;
 
-    bool calcDistance;
-
     // Start is called before the first frame update
     void Start()
     {
-        if (File.Exists(Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + "/ProjectData/Test.txt"))
-        {
-            File.Delete(Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + "/ProjectData/Test.txt");
-        }
-
         dingSound.enabled = false;
         cameraForward = GameObject.Find("Camera").transform.forward;
 
@@ -49,8 +41,7 @@ public class DistanceTracker : MonoBehaviour
         pointList = new List<Vector3>();
         pointTimer = 0.1f;
         startTimer = 5.0f;
-        runTimer = 60.0f;
-        calcDistance = false;
+        runTimer = 45.0f;
     }
 
     // Update is called once per frame
@@ -59,12 +50,6 @@ public class DistanceTracker : MonoBehaviour
         StartTimer();
 
         MovementCheck();
-
-        /*if (pointList.Count > 1)
-        {
-            //Setting the displacement from the starting point
-            totalDisplacement = Mathf.Abs(pointList[0].magnitude - pointList[pointList.Count - 1].magnitude);
-        }*/
 
         // Decreasing the timer to create a new point along the users path
         if (isMovement) 
@@ -80,7 +65,7 @@ public class DistanceTracker : MonoBehaviour
                 if (runTimer > 0.0f)
                 {
                     pointList.Add(gameObject.transform.parent.transform.position);
-                    HandleTextFile.WriteString(gameObject.transform.parent.transform.position);
+                    HandleTextFile.WriteString(gameObject.transform.parent.transform.position, personName);
                     pointTimer = 0.1f;
                 }
             }
@@ -94,6 +79,14 @@ public class DistanceTracker : MonoBehaviour
         //Checking when the runTimer has reached 0 and drawing the users path
         if (runTimer <= 0.0f)
         {
+            if (SceneManager.GetActiveScene().name == "PreMazeTest")
+            {
+                if (!isMovement)
+                {
+                    SceneManager.LoadScene("MazeWalker");
+                }
+            }
+
             //Plotting a line along the path the user walks
             for (int i = 0; i < pointList.Count; i++)
             {
@@ -107,23 +100,6 @@ public class DistanceTracker : MonoBehaviour
 
             endPointCamera.transform.position = new Vector3(pointList[pointList.Count - 1].x, 10, pointList[pointList.Count - 1].z);
             runTimer = 0.0f;
-
-            if (!calcDistance)
-            {
-                for (int i = 0; i < pointList.Count; i++)
-                {
-                    if (i + 1 != pointList.Count)
-                    {
-                        totalDistance += Mathf.Abs(pointList[i].magnitude - pointList[i + 1].magnitude);
-                    }
-                    else
-                    {
-                        calcDistance = true;
-                    }
-                }
-            }
-
-            isMovement = false;
         }
     }
 

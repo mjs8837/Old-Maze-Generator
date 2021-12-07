@@ -53,7 +53,7 @@ public class MazeGenerator : MonoBehaviour
             rotationFactor = -rotationFactor;
         }
 
-        runTimer = 300.0f;
+        runTimer = 3.0f;
 
         //Creating an "objective" for the user to go towards
         newObjective = Instantiate(objective, new Vector3(Random.Range(0.0f, 18.0f), -10.0f, Random.Range(0.0f, 18.0f)), Quaternion.identity);
