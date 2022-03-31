@@ -7,12 +7,20 @@ using UnityEditor;
 
 public class HandleTextFile : MonoBehaviour
 {
+    // Check how many times the file name has been written
     static int nameCount = 0;
+    // check how many times the hour portion of the current time has been parsed from a string to an int. 
     static int parseCount = 0;
+
+    // Set the current time in the format of "HH : mm"
     static string time = DateTime.UtcNow.ToLocalTime().ToString("HH:mm");
+    //Set the current date in the format of "MM-dd"
     static string date = DateTime.Now.ToString("MM-dd");
+    // Set the substring of the current time that represents the hour of day in the format "HH."This is used when parsing down below to check if it is AM or PM 
     static string hours = time.Substring(0, 2);
+    // Set to the substring of the current time that represents the minutes of the day in the format of "mm"
     static string minutes = time.Substring(3, 2);
+    // This method opens up a new file with in the format "Pre/PostMaze_date_hours-minutesAM/PM_name.txt” in the folder called ProjectData on the Desktop. 
 
     [MenuItem("Tools/Write file")]
     public static void WriteString(Vector3 point, string name)

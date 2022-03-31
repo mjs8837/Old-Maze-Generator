@@ -29,12 +29,20 @@ public class MazeGenerator : MonoBehaviour
 
     GameObject newObjective;
 
+    // calculate  evrey frame based on infinadeck motion and used to scale the rotational speed of the maze
+
     float xDistance;
     float yDistance;
+    // decrease or increase the speed of the maze rotation. 
     [SerializeField] float rotationFactor;
+    // Based on how much time is left in the maze trial. This will be displayed on the screen for the person running the test to see
 
-    float runTimer;
+    [SerializeField] float runTimer;
+    [SerializeField] float distanceTraveled;
 
+    float distanceGoal;
+    
+    // Methods: Built in method that run on the start of the program to build maze, move the infinadeck reference out of user sight, set the rotation factor and run timer values, create the original objective for the user to follow and disable the audio until it is needed to play
     // Start is called before the first frame update
     void Start()
     {
@@ -43,7 +51,7 @@ public class MazeGenerator : MonoBehaviour
         //Moving the infinadeck reference in scene out of sight
         GameObject temp = GameObject.Find("InfinadeckReferenceObjects(Clone)");
         temp.transform.position += new Vector3(0.0f, -1.0f, 0.0f);
-
+        // Set the rotation factor
         rotationFactor = 5.0f;
 
         float randomNum = Random.Range(0.0f, 2.0f);
@@ -52,14 +60,17 @@ public class MazeGenerator : MonoBehaviour
         {
             rotationFactor = -rotationFactor;
         }
-
-        runTimer = 3.0f;
+        // Run time
+        runTimer = 10.0f;
+        distanceGoal = 100.0f;
 
         //Creating an "objective" for the user to go towards
         newObjective = Instantiate(objective, new Vector3(Random.Range(0.0f, 18.0f), -10.0f, Random.Range(0.0f, 18.0f)), Quaternion.identity);
         newObjective.transform.SetParent(transform);
-
+        // Disable the audio 
         dingAudio.enabled = false;
+
+        // Built in Unity method that runs every frame. It calls several method to run the program. 
     }
     private void Update()
     {
@@ -643,7 +654,7 @@ public class MazeGenerator : MonoBehaviour
         //check for rotation as random  
     }
 
-    //Rotating the maze based on Infinadeck motion
+    //Rotating the maze based on Infinadeck motion and increase by rotation factor 
     private void MazeRotation()
     {
         if (infinadeck != null)
@@ -682,7 +693,7 @@ public class MazeGenerator : MonoBehaviour
         }
     }
 
-    //Checking if the Infinadeck is producing movement
+    //Checking if the Infinadeck is producing movement and setting the isMovement bool based on its result.
     private void MovementCheck()
     {
         if (Mathf.Abs(xDistance) > 0.00001f || Mathf.Abs(yDistance) > 0.00001f)
@@ -694,7 +705,7 @@ public class MazeGenerator : MonoBehaviour
             isMovement = false;
         }
     }
-
+    // Check the distance between the player (the camera rig) and the objective. Create a new objective in the maze if the distance becomes small enough (<= 5)
     private void CheckObjectiveDistance()
     {
         float objectiveDistance = (newObjective.transform.position - cameraRig.transform.position).magnitude;
@@ -709,10 +720,13 @@ public class MazeGenerator : MonoBehaviour
             }
         }
     }
-
+    
+// Decrease the timer if the player moves and check when the timer is zero to let the player know to stop moving and transition
     private void TimerChecks()
     {
-        if (isMovement)
+        //THIS SECTION USES TIME AS A VARIABLE
+
+        /*if (isMovement)
         {
             if (runTimer > 0.0f && mazeFinished)
             {
@@ -728,13 +742,33 @@ public class MazeGenerator : MonoBehaviour
             {
                 SceneManager.LoadScene("PostMazeTest");
             }
+        }*/
+
+        //THIS SECTION USES DISTANCE AS A VARIABLE
+
+        if (isMovement)
+        {
+            if (distanceTraveled < distanceGoal && mazeFinished)
+            {
+                distanceTraveled += Mathf.Abs(xDistance) + Mathf.Abs(yDistance);
+            }
+        }
+
+        if (distanceTraveled > distanceGoal && mazeFinished)
+        {
+            dingAudio.enabled = true;
+
+            if (!isMovement)
+            {
+                SceneManager.LoadScene("PostMazeTest");
+            }
         }
     }
-
+/*
     private void OnGUI()
     {
         float seconds = Mathf.Floor(runTimer % 60.0f);
         float minutes = Mathf.Floor(runTimer / 60.0f); 
         GUI.Label(new Rect(10, 10, 100, 100), "Time Remaining: " + string.Format("{0:0}", minutes) + ":" + string.Format("{0:00}", seconds));
-    }
+    }*/
 }
