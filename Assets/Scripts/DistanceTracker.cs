@@ -8,39 +8,54 @@ using UnityEngine.SceneManagement;
 public class DistanceTracker : MonoBehaviour
 {
     [SerializeField] string personName;
+
     //Connecting the infinadeck and the Unity game object
     [SerializeField] GameObject infinadeck;
-    // Serialized field for the prefab of the object placed in front of the user when the post maze starts 
+
+    // Serialized field for the prefab of the object placed in front of the user when the pre/post maze starts 
     [SerializeField] GameObject startDirection;
-    // Serialized field for the camera that is placed at the end of the users path in post maze
+
+    // Serialized field for the camera that is placed at the end of the users path in pre/post maze
     [SerializeField] Camera endPointCamera;
-    // Serialized field that holds ding sound. The file sound is located under Asset/Sounds within the project. The sound will play when the user is allowed to move in the post maze.
+
+    // Serialized field that holds ding sound. The file sound is located under Asset/Sounds within the project. The sound will play when the user is allowed to move in the pre/post maze.
     [SerializeField] AudioSource dingSound;
+
     // List all the point plotted along the user's path in the post maze analysis. A point is added to the list every time pointTimer resets.
     [SerializeField] List<Vector3> pointList;
-    // Calculate every frame based on infinadeck motion. Used to scale rotational speed of the maze 
+
+    // Calculate every frame based on infinadeck motion. Used to check if the user is moving 
     float xDistance;
     float yDistance;
-     // Bool that is set based on wether the xDistance and yDistance variables are greater than a certain value.
+
+     // Bool that is set based on whether the xDistance and yDistance variables are greater than a certain value.
     bool isMovement;
-    // Float set to the amount of time between each plotted point along the users path in the post maze analysis
+
+    // Float set to the amount of time between each plotted point along the users path in the pre/post maze analysis
     float pointTimer;
-    // Float that is set to the amount of time before the user is told to move at the begenning of the post maze. It also removes the object in front of the user that they try to reach.
+
+    // Float that is set to the amount of time before the user is told to move at the begenning of the pre/post maze. It also removes the object in front of the user that they try to reach.
     float startTimer;
-    // Float set to the amount of time the user be walking in the post maze analysis.
+
+    // Float set to the amount of time the user be walking in the pre/post maze analysis.
     [SerializeField] float runTimer;
+
+
     [SerializeField] float distanceTraveled;
     float distanceGoal;
-    // GameObject that is set in the post maze analysis using the startDirection prefab.
 
+    // GameObject that is set in the pre/post maze analysis using the startDirection prefab.
     GameObject startSphere;
-    //set to the foward direction the user is facing when they load into the post maze analysis. This is the direction the startSphere will span in.
+    //set to the foward direction the user is facing when they load into the pre/post maze analysis. This is the direction the startSphere will spawn in.
     Vector3 cameraForward;
+
+    [SerializeField] bool runTimerEnabled;
 
     // Start is called before the first frame update
     // Built in Unity method that runs at the start of the program. It deletes the existing data file on the desktop. It will get the camera's foward vector, spawn in the start sphere, and set all the timers to their respective values.
     void Start()
     {
+        runTimerEnabled = false;
         dingSound.enabled = false;
         cameraForward = GameObject.Find("Camera").transform.forward;
         cameraForward.y = cameraForward.y + 0.1f;
@@ -51,8 +66,8 @@ public class DistanceTracker : MonoBehaviour
         pointList = new List<Vector3>();
         pointTimer = 0.1f;
         startTimer = 5.0f;
-        runTimer = 10.0f;
-        distanceGoal = 100.0f;
+        runTimer = 20.0f;
+        distanceGoal = 20.0f;
     }
 
     // Update is called once per frame
@@ -63,110 +78,120 @@ public class DistanceTracker : MonoBehaviour
 
         MovementCheck();
 
-
-        //QualitySettings.vSyncCount = 0;  // VSync must be disabled
-        //Application.targetFrameRate = 60;
+        if (distanceTraveled <= 0.0001f && runTimer == 10.0f)
+        {
+            if (Input.GetKeyDown(KeyCode.M))
+            {
+                runTimerEnabled = !runTimerEnabled;
+            }
+        }
 
         //THIS SECTION USES TIME AS A VARIABLE
 
-        // Decreasing the timer to create a new point along the users path
-        /*if (startSphere == null) 
+        if (runTimerEnabled)
         {
-            if (pointTimer > 0.0f)
+            // Decreasing the timer to create a new point along the users path
+            if (startSphere == null)
             {
-                pointTimer -= Time.deltaTime;
-            }
+                if (pointTimer > 0.0f)
+                {
+                    pointTimer -= Time.deltaTime;
+                }
 
-            //Adding a point based on where the user is and resetting the timer
-            else
-            {
+                //Adding a point based on where the user is and resetting the timer
+                else
+                {
+                    if (runTimer > 0.0f)
+                    {
+                        pointList.Add(gameObject.transform.parent.transform.position);
+                        HandleTextFile.WriteString(gameObject.transform.parent.transform.position, personName);
+                        pointTimer = 0.1f;
+                    }
+                }
+
                 if (runTimer > 0.0f)
                 {
-                    pointList.Add(gameObject.transform.parent.transform.position);
-                    HandleTextFile.WriteString(gameObject.transform.parent.transform.position, personName);
-                    pointTimer = 0.1f;
+                    runTimer -= Time.deltaTime;
                 }
             }
 
-            if (runTimer > 0.0f)
+            //Checking when the runTimer has reached 0 and drawing the users path
+            if (runTimer <= 0.0f)
             {
-                runTimer -= Time.deltaTime;
+                if (SceneManager.GetActiveScene().name == "PreMazeTest")
+                {
+                    if (!isMovement)
+                    {
+                        SceneManager.LoadScene("MazeWalker");
+                    }
+                }
+
+                //Plotting a line along the path the user walks
+                for (int i = 0; i < pointList.Count; i++)
+                {
+                    //line.SetPosition(i, pointList[i]);
+
+                    if (i + 1 != pointList.Count)
+                    {
+                        Debug.DrawLine(pointList[i], pointList[i + 1], Color.red);
+                    }
+                }
+
+                endPointCamera.transform.position = new Vector3(pointList[pointList.Count - 1].x, 10, pointList[pointList.Count - 1].z);
             }
         }
 
-        //Checking when the runTimer has reached 0 and drawing the users path
-        if (runTimer <= 0.0f)
+        else
         {
-            if (SceneManager.GetActiveScene().name == "PreMazeTest")
+            //THIS SECTION USES DISTANCE AS A VARIABLE
+            if (startSphere == null)
             {
-                if (!isMovement)
+                if (pointTimer > 0.0f)
                 {
-                    SceneManager.LoadScene("MazeWalker");
+                    pointTimer -= Time.deltaTime;
                 }
-            }
 
-            //Plotting a line along the path the user walks
-            for (int i = 0; i < pointList.Count; i++)
-            {
-                //line.SetPosition(i, pointList[i]);
-
-                if (i + 1 != pointList.Count)
+                //Adding a point based on where the user is and resetting the timer
+                else
                 {
-                    Debug.DrawLine(pointList[i], pointList[i + 1], Color.red);
+                    if (distanceTraveled < distanceGoal)
+                    {
+                        pointList.Add(gameObject.transform.parent.transform.position);
+                        HandleTextFile.WriteString(gameObject.transform.parent.transform.position, personName);
+                        pointTimer = 0.1f;
+                    }
                 }
-            }
 
-            endPointCamera.transform.position = new Vector3(pointList[pointList.Count - 1].x, 10, pointList[pointList.Count - 1].z);
-        }*/
-
-        //THIS SECTION USES DISTANCE AS A VARIABLE
-        if (startSphere == null)
-        {
-            if (pointTimer > 0.0f)
-            {
-                pointTimer -= Time.deltaTime;
-            }
-
-            //Adding a point based on where the user is and resetting the timer
-            else
-            {
                 if (distanceTraveled < distanceGoal)
                 {
-                    pointList.Add(gameObject.transform.parent.transform.position);
-                    HandleTextFile.WriteString(gameObject.transform.parent.transform.position, personName);
-                    pointTimer = 0.1f;
+                    distanceTraveled += Mathf.Abs(xDistance) + Mathf.Abs(yDistance);
                 }
             }
 
-            if (distanceTraveled < distanceGoal)
+            //Checking when the runTimer has reached 0 and drawing the users path
+            if (distanceTraveled > distanceGoal)
             {
-                distanceTraveled += Mathf.Abs(xDistance) + Mathf.Abs(yDistance);
-            }
-        }
-
-        //Checking when the runTimer has reached 0 and drawing the users path
-        if (distanceTraveled > distanceGoal)
-        {
-            if (SceneManager.GetActiveScene().name == "PreMazeTest")
-            {
-                if (!isMovement)
+                if (SceneManager.GetActiveScene().name == "PreMazeTest")
                 {
-                    SceneManager.LoadScene("MazeWalker");
+                    if (!isMovement)
+                    {
+                        SceneManager.LoadScene("MazeWalker");
+                    }
                 }
-            }
 
-            //Plotting a line along the path the user walks
-            for (int i = 0; i < pointList.Count; i++)
-            {
-                //line.SetPosition(i, pointList[i]);
-
-                if (i + 1 != pointList.Count)
+                //Plotting a line along the path the user walks
+                for (int i = 0; i < pointList.Count; i++)
                 {
-                    Debug.DrawLine(pointList[i], pointList[i + 1], Color.red);
-                }
-            }
+                    //line.SetPosition(i, pointList[i]);
 
-            endPointCamera.transform.position = new Vector3(pointList[pointList.Count - 1].x, 10, pointList[pointList.Count - 1].z);
+                    if (i + 1 != pointList.Count)
+                    {
+                        Debug.DrawLine(pointList[i], pointList[i + 1], Color.red);
+                    }
+                }
+
+                endPointCamera.transform.position = new Vector3(pointList[pointList.Count - 1].x, 10, pointList[pointList.Count - 1].z);
+            }
         }
     }
     //Check if the startTimer has reached zero and enable the ding sound to tell the user to move and remove the sphere in the direction they were originally facing.
@@ -205,12 +230,20 @@ public class DistanceTracker : MonoBehaviour
         }
     }
 
-/*    private void OnGUI()
+    private void OnGUI()
     {
-        float seconds = Mathf.Floor(runTimer % 60.0f);
-        float minutes = Mathf.Floor(runTimer / 60.0f);
+        if (runTimerEnabled)
+        {
+            float seconds = Mathf.Floor(runTimer % 60.0f);
+            float minutes = Mathf.Floor(runTimer / 60.0f);
 
-        GUI.Label(new Rect(10, 10, 300, 300), "Green = Start\nRed = End\nTime Remaining: " + string.Format("{0:0}", minutes) +
-            ":" + string.Format("{0:00}", seconds));
-    }*/
+            GUI.Label(new Rect(10, 10, 300, 300), "Green = Start\nRed = End\nTime Remaining: " + string.Format("{0:0}", minutes) +
+                ":" + string.Format("{0:00}", seconds));
+        }
+        else
+        {
+            float distanceRemaining = distanceGoal - distanceTraveled;
+            GUI.Label(new Rect(10, 10, 300, 300), "Green = Start\nRed = End\nDistance Remaining: " + string.Format("{0:00}", distanceRemaining));
+        }
+    }
 }

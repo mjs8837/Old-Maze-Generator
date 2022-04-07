@@ -41,6 +41,8 @@ public class MazeGenerator : MonoBehaviour
     [SerializeField] float distanceTraveled;
 
     float distanceGoal;
+
+    [SerializeField] bool runTimerEnabled;
     
     // Methods: Built in method that run on the start of the program to build maze, move the infinadeck reference out of user sight, set the rotation factor and run timer values, create the original objective for the user to follow and disable the audio until it is needed to play
     // Start is called before the first frame update
@@ -61,8 +63,9 @@ public class MazeGenerator : MonoBehaviour
             rotationFactor = -rotationFactor;
         }
         // Run time
-        runTimer = 10.0f;
-        distanceGoal = 100.0f;
+        runTimer = 120.0f;
+        distanceGoal = 50.0f;
+        runTimerEnabled = false;
 
         //Creating an "objective" for the user to go towards
         newObjective = Instantiate(objective, new Vector3(Random.Range(0.0f, 18.0f), -10.0f, Random.Range(0.0f, 18.0f)), Quaternion.identity);
@@ -79,6 +82,14 @@ public class MazeGenerator : MonoBehaviour
         MovementCheck();
 
         CheckObjectiveDistance();
+
+        if (distanceTraveled <= 0.0001f && runTimer == 10.0f)
+        {
+            if (Input.GetKeyDown(KeyCode.M))
+            {
+                runTimerEnabled = !runTimerEnabled;
+            }
+        }
 
         TimerChecks();
 
@@ -726,41 +737,47 @@ public class MazeGenerator : MonoBehaviour
     {
         //THIS SECTION USES TIME AS A VARIABLE
 
-        /*if (isMovement)
+        if (runTimerEnabled)
         {
-            if (runTimer > 0.0f && mazeFinished)
+            if (isMovement)
             {
-                runTimer -= Time.deltaTime;
+                if (runTimer > 0.0f && mazeFinished)
+                {
+                    runTimer -= Time.deltaTime;
+                }
+            }
+
+            if (runTimer <= 0.5f && mazeFinished)
+            {
+                dingAudio.enabled = true;
+
+                if (!isMovement)
+                {
+                    SceneManager.LoadScene("PostMazeTest");
+                }
             }
         }
-
-        if (runTimer <= 0.5f && mazeFinished)
-        {
-            dingAudio.enabled = true;
-
-            if (!isMovement)
-            {
-                SceneManager.LoadScene("PostMazeTest");
-            }
-        }*/
 
         //THIS SECTION USES DISTANCE AS A VARIABLE
 
-        if (isMovement)
+        else
         {
-            if (distanceTraveled < distanceGoal && mazeFinished)
+            if (isMovement)
             {
-                distanceTraveled += Mathf.Abs(xDistance) + Mathf.Abs(yDistance);
+                if (distanceTraveled < distanceGoal && mazeFinished)
+                {
+                    distanceTraveled += Mathf.Abs(xDistance) + Mathf.Abs(yDistance);
+                }
             }
-        }
 
-        if (distanceTraveled > distanceGoal && mazeFinished)
-        {
-            dingAudio.enabled = true;
-
-            if (!isMovement)
+            if (distanceTraveled > distanceGoal && mazeFinished)
             {
-                SceneManager.LoadScene("PostMazeTest");
+                dingAudio.enabled = true;
+
+                if (!isMovement)
+                {
+                    SceneManager.LoadScene("PostMazeTest");
+                }
             }
         }
     }
